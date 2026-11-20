@@ -1,0 +1,18 @@
+"use client";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Database, LockKeyhole, Server, ShieldCheck } from "lucide-react";
+import { api } from "@/lib/api";
+import type { Providers } from "@/lib/types";
+import { usePreferences } from "@/lib/preferences";
+import { ErrorState, Loading, PageHeading } from "@/components/ui";
+export default function SettingsPage() {
+  const query = useQuery({ queryKey: ["providers"], queryFn: () => api<Providers>("/config/providers") });
+  const [prefs, save] = usePreferences();
+  const [message, setMessage] = useState("");
+  function update(next: typeof prefs) { try { save(next); setMessage("Preferences saved in this browser."); } catch { setMessage("This browser did not allow preferences to be saved."); } }
+  return <><PageHeading eyebrow="CONFIGURATION" title="Review configuration." description="Manage review preferences and inspect the server’s configuration." />
+    {query.isPending ? <Loading /> : query.error ? <ErrorState error={query.error} retry={() => query.refetch()} /> : <div className="settings-grid"><section className="panel settings-panel"><div className="panel-heading"><h2><Server size={18} aria-hidden /> Review engine</h2><span className="badge badge-completed">Ready</span></div><dl className="settings-values"><div><dt>Deterministic analysis</dt><dd>Always available</dd></div><div><dt>AI provider</dt><dd>{query.data.selected === "none" ? "Disabled" : query.data.selected}</dd></div><div><dt>AI Model</dt><dd>{query.data.model || "Not configured"}</dd></div><div><dt>GitHub credentials</dt><dd>{query.data.github_authenticated ? "Configured on server" : "Public access only"}</dd></div></dl><div className="notice"><LockKeyhole size={17} aria-hidden /><p>Credentials stay on the server. To enable AI specialists, set <code>AICR_PROVIDER</code>, <code>AICR_BASE_URL</code> and <code>AICR_MODEL</code> in the server environment, then restart it.</p></div></section>
+      <section className="panel settings-panel"><div className="panel-heading"><h2><ShieldCheck size={18} aria-hidden /> Review preferences</h2></div><label className="check-field"><input type="checkbox" checked={prefs.includeAI} disabled={!query.data.ai_available} onChange={e => update({ ...prefs, includeAI: e.target.checked })} /><span><strong>Include AI specialists by default</strong><small>{query.data.ai_available ? "You can override this for each new review." : "Configure a provider on the server to enable."}</small></span></label><label className="check-field"><input type="checkbox" checked={prefs.includeInfo} onChange={e => update({ ...prefs, includeInfo: e.target.checked })} /><span><strong>Show informational findings</strong><small>Include documentation and other informational notes in the workspace.</small></span></label><p className="field-hint" role="status">{message || "Preferences are stored in this browser, not in reviewed repositories."}</p></section>
+      <section className="panel settings-panel"><div className="panel-heading"><h2><Database size={18} aria-hidden /> Storage and boundaries</h2></div><dl className="settings-values"><div><dt>History database</dt><dd>SQLite database</dd></div><div><dt>Full source retention</dt><dd>{query.data.source_retention_hours} hours</dd></div><div><dt>Upload budget</dt><dd>{query.data.max_source_bytes / 1_000_000} MB / {query.data.max_files} files</dd></div><div><dt>Patch application</dt><dd>Never automatic</dd></div></dl><p className="field-hint">Full source snapshots expire. Reports retain cited evidence until you delete the review from history. Treat reports like source code.</p></section></div>}</>;
+}

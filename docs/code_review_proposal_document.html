@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Review System - Technical Design & Research Document</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #f3e8ff;
+            --secondary: #0284c7;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-body);
+            color: var(--text-dark);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .document-wrapper {
+            max-width: 900px;
+            margin: 30px auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 60px 80px;
+            border-radius: 12px;
+        }
+
+        /* Cover Sheet */
+        .cover-page {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .cover-tag {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .cover-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1.25;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .cover-subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+
+        .cover-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .meta-label {
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        /* Headings */
+        h1.doc-h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-top: 40px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 6px;
+            scroll-margin-top: 20px;
+        }
+
+        h2.doc-h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: var(--text-muted);
+        }
+
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 20px;
+            color: var(--text-muted);
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Tables */
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .doc-table th {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .doc-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
+        }
+
+        .doc-table tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        /* Diagrams */
+        .diagram-container {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .diagram-caption {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Callout Box */
+        .callout {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        /* Print Controls Bar */
+        .print-floating-bar {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        @media print {
+            .print-floating-bar {
+                display: none !important;
+            }
+            .document-wrapper {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+            h1.doc-h1 {
+                page-break-before: always;
+            }
+            .cover-page {
+                page-break-before: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+<aside style="padding:16px;background:#fff3cd;color:#332701">Historical research presentation. Capabilities, benchmarks and latency are proposed or unverified. See the repository README for the implemented Phase 1 engine.</aside>
+
+    <div class="print-floating-bar">
+        <span style="font-weight: 600; font-size: 13px;">Document Controls:</span>
+        <button class="btn-action" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+
+    <div class="document-wrapper">
+        
+        <!-- Cover Page Sheet -->
+        <div class="cover-page">
+            <span class="cover-tag">TECHNICAL DESIGN & RESEARCH SPECIFICATION</span>
+            <h1 class="cover-title">Code Review System using Artificial Intelligence</h1>
+            <p class="cover-subtitle">A Next-Generation Multi-Agent Software Architecture Proposal</p>
+            
+            <div class="cover-meta-grid">
+                <div>
+                    <div class="meta-label">Document Standard</div>
+                    <div class="meta-value">IEEE / Software Design Spec</div>
+                </div>
+                <div>
+                    <div class="meta-label">Domain Area</div>
+                    <div class="meta-value">AI4SE & Program Analysis</div>
+                </div>
+                <div>
+                    <div class="meta-label">Target Audience</div>
+                    <div class="meta-value">Professors & Mentors</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1 -->
+        <h1 class="doc-h1">1. Introduction & Foundations</h1>
+        <p>Software engineering is the application of systematic, disciplined, quantifiable approaches to the development, operation, and maintenance of software systems. In high-velocity enterprise engineering, code represents the primary asset and formal logic model.</p>
+        
+        <div class="diagram-container">
+            <pre class="mermaid">
+            graph LR
+                A[1. Requirements Analysis] --> B[2. Architecture & Design]
+                B --> C[3. Software Coding]
+                C --> D[4. Code Review & SAST]
+                D --> E[5. Testing & Verification]
+                E --> F[6. CI/CD Release]
+            </pre>
+            <div class="diagram-caption">Figure 1.1: Software Development Lifecycle (SDLC) Overview</div>
+        </div>
+
+        <!-- Section 2 -->
+        <h1 class="doc-h1">2. What is Code Review?</h1>
+        <p>Code Review is a systematic examination of source code modifications performed by peer engineers or automated AI agents prior to branch merging.</p>
+        
+        <div class="callout">
+            <strong>Key Industry Findings:</strong> Research across Microsoft and Google engineers demonstrates that peer and static automated code reviews capture over 60% of logic bugs and security risks prior to production deployment.
+        </div>
+
+        <!-- Section 3 -->
+        <h1 class="doc-h1">3. Types of Code Reviews</h1>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th>Review Type</th>
+                    <th>Mechanism</th>
+                    <th>Advantages</th>
+                    <th>Disadvantages</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Manual Peer Review</strong></td>
+                    <td>Async inspection by senior devs</td>
+                    <td>High domain empathy</td>
+                    <td>High latency (24-72 hrs)</td>
+                </tr>
+                <tr>
+                    <td><strong>Pair Programming</strong></td>
+                    <td>Real-time 2-dev collaboration</td>
+                    <td>Zero feedback latency</td>
+                    <td>High cost (2x dev hours)</td>
+                </tr>
+                <tr>
+                    <td><strong>Automated SAST</strong></td>
+                    <td>Rule-based AST linter in CI</td>
+                    <td>Sub-second execution</td>
+                    <td>Lacks semantic reasoning</td>
+                </tr>
+                <tr>
+                    <td><strong>AI Multi-Agent Review</strong></td>
+                    <td>LLM + RAG reasoning over diffs</td>
+                    <td>24/7 fast context reasoning</td>
+                    <td>Requires AST grounding</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Section 4 -->
+        <h1 class="doc-h1">4. Complete Code Review Process</h1>
+        <p>The review pipeline follows a 10-stage process from commit to deployment:</p>
+        <ol>
+            <li>Developer commits local code.</li>
+            <li>Pull Request (PR) is opened on GitHub/GitLab.</li>
+            <li>Static linters execute preliminary AST checks.</li>
+            <li>AI Multi-Agent system ingests diff & vector codebase memory.</li>
+            <li>Security, Bug, and Performance sub-agents execute parallel audits.</li>
+            <li>AI posts inline comments, composite score (0-100), and 1-click self-healing patches.</li>
+            <li>Senior human reviewer verifies architectural alignment.</li>
+            <li>PR receives formal approval, merges to main, and deploys.</li>
+        </ol>
+
+        <!-- Section 5 & 6 -->
+        <h1 class="doc-h1">5. Code Review Best Practices</h1>
+        <p>Enforcing clean architecture principles (SOLID, DRY, KISS) and keeping PRs small (&lt;250 lines of code) ensures high defect detection accuracy.</p>
+
+        <h1 class="doc-h1">6. Problems in Existing Code Review Systems</h1>
+        <ul>
+            <li><strong>Reviewer Fatigue:</strong> Human accuracy drops by 80% on PRs &gt;400 LOC.</li>
+            <li><strong>PR Latency:</strong> Idle review queues block developer iteration for days.</li>
+            <li><strong>Missed Bugs:</strong> Complex edge cases and SQL vulnerabilities escape manual reviews.</li>
+        </ul>
+
+        <!-- Section 7 -->
+        <h1 class="doc-h1">7. Existing Code Review Tools (45+ Market Matrix)</h1>
+        <p>Categorized evaluation of top software analysis tools across the industry:</p>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Representative Industry Tools</th>
+                    <th>AI Integration</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>VCS Platforms</td>
+                    <td>GitHub PRs, GitLab MRs, Bitbucket, Gerrit, Phabricator</td>
+                    <td>Copilot / Duo AI</td>
+                </tr>
+                <tr>
+                    <td>Static SAST Gates</td>
+                    <td>SonarQube, Codacy, Semgrep, CodeQL, DeepSource, Snyk</td>
+                    <td>Semgrep AI / Snyk AI</td>
+                </tr>
+                <tr>
+                    <td>AI Agents & Assistants</td>
+                    <td>Cursor Agent, CodiumAI, Aider, OpenHands, Claude 3.5, GPT-4o</td>
+                    <td>Deep Repo Index & Auto Edits</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Section 8-10 -->
+        <h1 class="doc-h1">8. Market Analysis & Trends</h1>
+        <p>Gartner projects that by 2028, 75%+ of enterprise engineers will use AI code assistants. Teams deploying AI pre-reviews see a 42% reduction in PR turnaround latency.</p>
+
+        <h1 class="doc-h1">9. Core AI Technologies</h1>
+        <p>1. Tree-Sitter AST Parsing &nbsp; | &nbsp; 2. Control Flow Graphs (CFG) &nbsp; | &nbsp; 3. Vector RAG Embeddings &nbsp; | &nbsp; 4. Multi-Agent Orchestration</p>
+
+        <h1 class="doc-h1">10. Proposed AI Code Review System</h1>
+        <p>A hybrid platform combining AST linters, RAG repository memory, and multi-agent LLM reasoning to support evidence-grounded pull request reviews; latency and accuracy remain unmeasured.</p>
+
+        <!-- Section 11-15 -->
+        <h1 class="doc-h1">11. Proposed Features (30+ Intelligence Modules)</h1>
+        <ul>
+            <li>AI Bug Detection & OWASP Vulnerability Audit</li>
+            <li>Algorithmic Complexity ($O(N^2)$) Optimization</li>
+            <li>1-Click Self-Healing Git Patches & Auto Test Generation</li>
+            <li>Interactive Repository AI Chat & Semantic Search</li>
+            <li>Risk Prediction & Composite Quality Score (0-100)</li>
+        </ul>
+
+        <h1 class="doc-h1">12. Frontier AI Models Benchmark</h1>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Context Window</th>
+                    <th>HumanEval</th>
+                    <th>Optimal Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Claude 3.5 Sonnet</td><td>200,000 Tokens</td><td>92.0%</td><td>Primary Review Engine</td></tr>
+                <tr><td>GPT-4o</td><td>128,000 Tokens</td><td>90.2%</td><td>Fast Analysis</td></tr>
+                <tr><td>DeepSeek-R1</td><td>64,000 Tokens</td><td>90.8%</td><td>Deep Logic Reasoning</td></tr>
+                <tr><td>Gemini 1.5 Pro</td><td>2,000,000 Tokens</td><td>89.4%</td><td>Monorepo Context RAG</td></tr>
+            </tbody>
+        </table>
+
+        <h1 class="doc-h1">13. System Architecture & Multi-Agent Design</h1>
+        <div class="diagram-container">
+            <pre class="mermaid">
+            graph TD
+                COORD[Coordinator Agent] --> SEC[Security Agent]
+                COORD --> BUG[Bug Logic Agent]
+                COORD --> PERF[Performance Agent]
+                SEC --> SYNTH[Synthesis Agent]
+                BUG --> SYNTH
+                PERF --> SYNTH
+                SYNTH --> POST[GitHub Comment Poster]
+            </pre>
+            <div class="diagram-caption">Figure 13.1: Multi-Agent Collaboration State Machine</div>
+        </div>
+
+        <h1 class="doc-h1">14. Innovations & References</h1>
+        <p>Introduces AST-grounded multi-agent verification, 1-click self-healing diff generation, and repository vector memory graphs.</p>
+        <p><strong>References (IEEE Format):</strong><br>
+        [1] A. Bacchelli & C. Bird, "Expectations, outcomes, and challenges of modern code review," ICSE 2013.<br>
+        [2] Anthropic, "Claude 3.5 Sonnet Technical Report," 2024.<br>
+        [3] DeepSeek AI, "DeepSeek-R1 Technical Report," 2025.</p>
+
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+</body>
+</html>

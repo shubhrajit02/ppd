@@ -1,0 +1,5 @@
+import { defineConfig } from "@playwright/test";
+export default defineConfig({ testDir: "./e2e", fullyParallel: false, workers: 1, timeout: 45000, expect: { timeout: 10000 }, reporter: "list", use: { baseURL: "http://127.0.0.1:3000", channel: process.env.CI ? "chromium" : "msedge", viewport: { width: 1440, height: 1000 }, trace: "retain-on-failure", screenshot: "only-on-failure" }, webServer: [
+  { command: process.platform === "win32" ? "..\\.venv\\Scripts\\aicr-api.exe" : "aicr-api", url: "http://127.0.0.1:8000/api/health", reuseExistingServer: !process.env.CI, env: { AICR_PROVIDER: "none", AICR_WEB_DATA_DIR: "../.aicr/e2e" }, timeout: 30000 },
+  { command: "npm run start", url: "http://127.0.0.1:3000", reuseExistingServer: !process.env.CI, timeout: 60000 }
+] });

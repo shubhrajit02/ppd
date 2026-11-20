@@ -1,6 +1,6 @@
 # AICR — AI Code Review System
 
-**Understand the code. Review with evidence.**
+**Understand the code. Review with evidence and AI**
 
 AICR reviews Python, JavaScript and TypeScript through a web application or a command-line tool. It finds potential issues, points to the relevant source lines, explains the review score, and provides suggested patches where available.
 
